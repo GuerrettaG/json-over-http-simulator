@@ -31,6 +31,30 @@ class SimpleJSONHandler(BaseHTTPRequestHandler):
         else:
             self.send_error(404, "Path not found")
 
+    def do_POST(self):
+        if self.path == "/device-3":
+            content_length = int(self.headers["Content-Length"])
+            post_data = self.rfile.read(content_length)
+            try:
+                requested_info = json.loads(post_data.decode("utf8").replace("'", '"'))
+                requested_info = requested_info[0]
+            except Exception:
+                self.send_error(400, "Invalid JSON")
+                return
+            print(requested_info)
+            payload = {
+                "Voltage L1-L2": round(random.uniform(400.0, 430.0), 3),
+                "Device-Name": "Json-over-http Simulator 3 (POST)",
+                "Working": False,
+                "Temperature": round(random.uniform(15.0, 25.0), 3),
+                "Active Alarms": ["Overvoltage", "Device not running"],
+            }
+            self.respond_with_json(
+                payload.get(requested_info, f"{requested_info} not found")
+            )
+        else:
+            self.send_error(404, "Path not found")
+
     def respond_with_json(self, data):
         response = json.dumps(data).encode("utf-8")
         self.send_response(200)
