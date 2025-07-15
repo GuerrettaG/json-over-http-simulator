@@ -37,11 +37,13 @@ class SimpleJSONHandler(BaseHTTPRequestHandler):
             post_data = self.rfile.read(content_length)
             try:
                 requested_info = json.loads(post_data.decode("utf8").replace("'", '"'))
-                requested_info = requested_info[0]
+                if not isinstance(requested_info, list):
+                    self.send_error(400, "Payload needs to be a json array")
+                    return
             except Exception:
                 self.send_error(400, "Invalid JSON")
                 return
-            print(requested_info)
+
             payload = {
                 "Voltage L1-L2": round(random.uniform(400.0, 430.0), 3),
                 "Device-Name": "Json-over-http Simulator 3 (POST)",
@@ -49,9 +51,8 @@ class SimpleJSONHandler(BaseHTTPRequestHandler):
                 "Temperature": round(random.uniform(15.0, 25.0), 3),
                 "Active Alarms": ["Overvoltage", "Device not running"],
             }
-            self.respond_with_json(
-                payload.get(requested_info, f"{requested_info} not found")
-            )
+            response = {k: payload.get(k, "Not a valid value") for k in requested_info}
+            self.respond_with_json(response)
         else:
             self.send_error(404, "Path not found")
 
